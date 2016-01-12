@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+        <title>Web chat</title>
+
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+
+    <body style="padding-top: 70px;">
+
+        <nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">Web chat</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+
+            <h1>Web chat</h1>
+
+            <div class="messages" id="messages"></div>
+
+            <form class="form-inline">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="message" placeholder="Message" size="100">
+                </div>
+                <button type="button" type="submit" class="btn btn-success"
+                    onclick="send_message();">Send</button>
+            </form>
+
+
+        </div>
+
+        <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+        <script type="text/javascript">
+            var sender_socket = 0;
+            var reciever_socket = 0;
+
+            function send_message() {
+                var message = $('#message').val();
+                sender_socket.send(message);
+                // clean input
+                $('#message').val('');
+            }
+
+            function init_sockets() {
+                sender_socket = new WebSocket('ws://' + window.location.hostname + ':4030/');
+                //
+                reciever_socket = new WebSocket('ws://' + window.location.hostname + ':4031/');
+                reciever_socket.onmessage = function(event) {
+                    $('#messages').append('<p class="bg-success">' + event.data + '</p>');
+                };
+                reciever_socket.onclose = function(event) {
+                    $('#messages').append('<p class="bg-warning">disconnected</p>');
+                };
+            }
+
+            $(function() {
+                init_sockets();
+            });
+        </script>
+
+    </body>
+</html>
+
