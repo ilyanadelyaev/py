@@ -1,297 +1,120 @@
-data = []
+import os
 
-# 1
-data.append(
-u'010\n'
-u'010\n'
-u'010\n'
-u'010\n'
-u'010'
-)
 
-# 2
-data.append(
-u'111\n'
-u'001\n'
-u'111\n'
-u'100\n'
-u'111'
-)
-
-# 3
-data.append(
-u'111\n'
-u'001\n'
-u'111\n'
-u'001\n'
-u'111'
-)
-
-# 4
-
-data.append(
-u'101\n'
-u'101\n'
-u'111\n'
-u'001\n'
-u'001'
-)
-
-# 6
-
-data.append(
-u'111\n'
-u'100\n'
-u'111\n'
-u'101\n'
-u'111'
-)
-
-# 7
-
-data.append(
-u'111\n'
-u'001\n'
-u'001\n'
-u'010\n'
-u'010'
-)
-
-# 8
-
-data.append(
-u'111\n'
-u'101\n'
-u'111\n'
-u'101\n'
-u'111'
-)
-
-# 9
-
-data.append(
-u'111\n'
-u'101\n'
-u'111\n'
-u'001\n'
-u'010'
-)
-
-# 0
-
-data.append(
-u'111\n'
-u'101\n'
-u'101\n'
-u'101\n'
-u'111'
-)
-
-# 5 - 1
-
-data.append(
-u'111\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 2
-
-data.append(
-u'110\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 3
-
-data.append(
-u'111\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'011'
-)
-
-# 5 - 4
-
-data.append(
-u'110\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'011'
-)
-
-# 5 - 5
-
-data.append(
-u'111\n'
-u'100\n'
-u'110\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 6
-
-data.append(
-u'111\n'
-u'100\n'
-u'011\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 7
-
-data.append(
-u'111\n'
-u'100\n'
-u'010\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 8
-
-data.append(
-u'011\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'111'
-)
-
-# 5 - 9
-
-data.append(
-u'111\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'110'
-)
-
-# 5 - 10
-
-data.append(
-u'011\n'
-u'100\n'
-u'111\n'
-u'001\n'
-u'110'
-)
-
-# 5 - 11
-
-data.append(
-u'111\n'
-u'100\n'
-u'110\n'
-u'001\n'
-u'110'
-)
-
-printable_data = data[:]
-for i in xrange(len(data)):
-    t = data[i].replace(u'0', u' ')
-    t = t.replace(u'1', u'\u2588')
-    data[i] = data[i].replace('\n', ''), t
-
-#for d in data:
-#    print d[1]
-#    print d[0]
-
+IMG_SIZE_X = 3
+IMG_SIZE_Y = 5
 
 
 class Neuro(object):
     def __init__(self):
-        self.weight = [0.0] * (5 * 3)  # link weight
-        self.limit = 9  # responce limit
+        self.weight = [0] * (IMG_SIZE_X * IMG_SIZE_Y)  # link weight
+        self.limit = int(float(IMG_SIZE_X * IMG_SIZE_Y) * 0.65)  # responce limit
 
-    def process(self, data):
+    def process(self, seq):
         mul = []
         # multiply signal to link weight
-        for i in xrange(5):
-            for j in xrange(3):
-                p = i * 3 + j
-                mul.append(int(data[p]) * self.weight[p])
+        for i in xrange(IMG_SIZE_Y):
+            for j in xrange(IMG_SIZE_X):
+                p = i * IMG_SIZE_X + j
+                mul.append(int(seq[p]) * self.weight[p])
         # sum signals
         sm = sum(mul)
 
         return sm >= self.limit, sm
 
-    def inc_weight(self, data):
-        for i in xrange(5):
-            for j in xrange(3):
-                p = i * 3 + j
-                self.weight[p] += int(data[p])
+    def inc_weight(self, seq):
+        for i in xrange(IMG_SIZE_Y):
+            for j in xrange(IMG_SIZE_X):
+                p = i * IMG_SIZE_X + j
+                self.weight[p] += int(seq[p])
 
-    def dec_weight(self, data):
-        for i in xrange(5):
-            for j in xrange(3):
-                p = i * 3 + j
-                self.weight[p] -= int(data[p])
+    def dec_weight(self, seq):
+        for i in xrange(IMG_SIZE_Y):
+            for j in xrange(IMG_SIZE_X):
+                p = i * IMG_SIZE_X + j
+                self.weight[p] -= int(seq[p])
 
-    def save(self):
-        import zlib
-        import json
-        with open('./neuro.dat', 'wb') as f:
-            f.write(zlib.compress(json.dumps(self.weight)))
-            print 'weight has saved'
 
-    def load(self):
-        import zlib
-        import json
-        try:
-            with open('./neuro.dat', 'rb') as f:
-                self.weight = json.loads(zlib.decompress(f.read()))
-            print 'weight has loaded'
-        except IOError:
-            pass
+def read_image(path):
+    with open(path, 'rb') as f:
+        rep = f.read().decode('utf8').strip('\n')
+        seq = rep.replace(u'\u2588', u'1')
+        seq = seq.replace(u' ', u'0')
+        seq = seq.replace('\n', '')
+        return rep, seq
 
 
 if __name__ == '__main__':
-    n = Neuro()
-    n.load()
+    # load numbers
 
-    def process(n, educate=False):
-        for d, v in data:
-            print v
-            res = n.process(d)
-            print res[0], res[1]
-            if not educate:
-                continue
-            print 'T (true) / F (false) / S (skip)'
-            while True:
-                ans = raw_input()
-                ans = ans.lower()
-                if ans == 's':
-                    break
-                if ans == 't':
-                    if not res[0]:
-                        print 'increase'
-                        n.inc_weight(d)
-                    break
-                elif ans == 'f':
-                    if res[0]:
-                        print 'decrease'
-                        n.dec_weight(d)
-                    break
-                else:
-                    print 'invalid. try again'
-                    continue
+    numbers = []
+    for num in xrange(10):
+        numbers.append([])
+        for var in xrange(10):
+            path = os.path.join(os.path.dirname(__file__), 'numbers', str(num), str(var))
+            if os.path.exists(path):
+                rep, seq = read_image(path)
+                numbers[num].append((rep, seq))
 
-    #process(n, educate=True)
-    # [0.0, 1.0, 0.0, 5.0, 0.0, -7.0, 0.0, 0.0, 0.0, -11.0, 0.0, 1.0, 1.0, 1.0, 1.0]
+    # create neuros
 
-    process(n)
+    neuros = [Neuro() for _ in xrange(10)]
 
-    print n.weight
+    # learn
 
-    n.save()
+    for neuro_i, neuro in enumerate(neuros):
+
+        # TODO: have problems with 8
+        if neuro_i == 8:
+            continue
+
+        while True:
+            corrected = False
+
+            for num_i, num in enumerate(numbers):
+
+                for _, seq in num:
+
+                    res = neuro.process(seq)
+
+                    # increase for correct number
+                    if (neuro_i == num_i) and not res[0]:
+                        neuro.inc_weight(seq)
+                        corrected = True
+
+                    # decrease for incorrect number
+                    elif not (neuro_i == num_i) and res[0]:
+                        neuro.dec_weight(seq)
+                        corrected = True
+
+            if not corrected:
+                break
+
+    # show results
+
+    for neuro_i, neuro in enumerate(neuros):
+        print neuro.weight
+
+    # check
+
+    while True:
+        print 'Print number image like: 0/1'
+        print 'Empty for break'
+        print '>',
+        inp = raw_input()
+        if not inp:
+            break
+        path = os.path.join(os.path.dirname(__file__), 'numbers', inp)
+        if os.path.exists(path):
+            rep, seq = read_image(path)
+            print rep
+            res = []
+            for neuro_i, neuro in enumerate(neuros):
+                ret, val = neuro.process(seq)
+                res.append(ret)
+            if sum(res) != 1:
+                print '!! Ivalid neuro state with:', res
+            else:
+                print 'Number is:', res.index(1)
+        else:
+            print '!! Invalid image. Try again..'
